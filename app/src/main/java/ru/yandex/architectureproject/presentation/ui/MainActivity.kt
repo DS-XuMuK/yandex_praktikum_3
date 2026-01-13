@@ -43,99 +43,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val viewModel by viewModels<TaskViewModel> { TaskViewModelFactory() }
+
         enableEdgeToEdge()
         setContent {
             ArchitectureProjectTheme {
-                TodoApp()
-            }
-        }
-    }
-
-    @Composable
-    fun TodoApp() {
-        val viewModel by viewModels<TaskViewModel> {
-            TaskViewModelFactory()
-        }
-
-        val state by viewModel.state.collectAsState()
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .systemBarsPadding(),
-            contentAlignment = Alignment.Center,
-        ) {
-            when (state) {
-                is TaskState.Loading -> CircularProgressIndicator()
-
-                is TaskState.Loaded -> {
-                    val tasks = (state as TaskState.Loaded).tasks
-                    TodoList(tasks = tasks, onAction = { action -> viewModel.reduce(action) })
-                }
-
-                is TaskState.Error -> Text(text = (state as TaskState.Error).message)
-            }
-        }
-    }
-
-    @Composable
-    fun TodoList(tasks: List<Task>, onAction: (TaskAction) -> Unit) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            val taskText = remember { mutableStateOf("") }
-
-            Row {
-                TextField(
-                    value = taskText.value,
-                    onValueChange = { taskText.value = it },
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = {
-                    if (taskText.value.isNotBlank()) {
-                        onAction(TaskAction.AddTask(taskText.value))
-                        taskText.value = ""
-                    }
-                }) {
-                    Text("Добавить")
-                }
-            }
-
-            LazyColumn {
-                items(tasks) { task ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            task.text,
-                            style = if (task.isDone) TextStyle(textDecoration = TextDecoration.LineThrough) else TextStyle()
-                        )
-                        Row {
-                            Checkbox(
-                                checked = task.isDone,
-                                onCheckedChange = {
-                                    onAction(
-                                        TaskAction.UpdateTaskStatus(
-                                            task.id,
-                                            it
-                                        )
-                                    )
-                                }
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(onClick = { onAction(TaskAction.DeleteTask(task.id)) }) {
-                                Text("Удалить")
-                            }
-                        }
-                    }
-                }
+                TodoApp(viewModel)
             }
         }
     }
